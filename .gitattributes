@@ -1,0 +1,11 @@
+# git files
+/.gitattributes export-ignore
+/.gitignore export-ignore
+
+# build chain
+/default.env.template export-ignore
+/phpmd.xml export-ignore
+/docker-compose.yml export-ignore
+/bin export-ignore
+/.github export-ignore
+/.circleci export-ignore
