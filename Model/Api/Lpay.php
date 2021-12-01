@@ -238,7 +238,7 @@ class Lpay extends AbstractApi
      * @noinspection PhpUndefinedMethodInspection
      */
 
-    protected function _prepareLatitudeCallRequest()
+    public function _prepareLatitudeCallRequest()
     {
         $to = [];
         /** @noinspection PhpUndefinedMethodInspection */
@@ -320,14 +320,6 @@ class Lpay extends AbstractApi
             return false;
         }
         $this->checkoutSession->unsLatitudeTotalAmount();
-        return true;
-    }
-
-    public function validatePayload($payload)
-    {
-        if($payload['reference'] !== $this->cart->getQuote()->getReservedOrderId()) {
-            throw new  \Magento\Framework\Exception\LocalizedException(__('Invalid Token'));
-        }
         return true;
     }
 }
