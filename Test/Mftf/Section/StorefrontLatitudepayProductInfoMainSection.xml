@@ -11,6 +11,6 @@
     <section name="StorefrontLatitudepayProductInfoMainSection">
         <element name="LatitudepaySnippetInstallmentText" type="radio" selector=".latitudepayments-popup__installment-text" timeout="30"/>
         <element name="LatitudepaySnippetLearnMoreText" type="block" selector=".lpay_snippet" timeout="30"/>
-        <element name="LatitudepaySnippetPopup" type="block" selector=".lpay-modal-wrapper" timeout="30"/>
+        <element name="LatitudepaySnippetPopup" type="block" selector=".lpay-modal" timeout="30"/>
     </section>
 </sections>
