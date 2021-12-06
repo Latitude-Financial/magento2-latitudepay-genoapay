@@ -477,7 +477,8 @@ class Checkout
     {
         $token = $payload['token'];
         $signature = $payload['signature'];
-        $this->validateSignature($payload);
+        $this->_getApi()->validateSignature($payload);
+        $this->_getApi()->validateSession($payload);
 
         if ($this->getCheckoutMethod() == \Magento\Checkout\Model\Type\Onepage::METHOD_GUEST) {
             $this->prepareGuestQuote();
@@ -748,23 +749,5 @@ class Checkout
             ->setCustomerIsGuest(true)
             ->setCustomerGroupId(\Magento\Customer\Model\Group::NOT_LOGGED_IN_ID);
         return $this;
-    }
-
-    /**
-     * Validate Signature 
-     *
-     * @return boolean
-     */
-    public function validateSignature($payload)
-    {
-        $payloadValidate = $payload;
-        unset($payloadValidate['signature']);
-        $salesStringStripped              = $this->curlHelper->stripJsonFromSalesString(json_encode($payloadValidate, JSON_UNESCAPED_SLASHES));
-        $salesStringStrippedBase64encoded = $this->curlHelper->base64EncodeSalesString(trim($salesStringStripped));
-        $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded));
-        if($payload['signature'] !== $signatureHash) {
-            throw new  \Magento\Framework\Exception\LocalizedException(__('Invalid Signature'));
-        }
-        return true;
     }
 }

@@ -237,7 +237,6 @@ class Lpay extends AbstractApi
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      * @noinspection PhpUndefinedMethodInspection
      */
-
     public function _prepareLatitudeCallRequest()
     {
         $to = [];
@@ -302,6 +301,11 @@ class Lpay extends AbstractApi
         return $to;
     }
 
+    /**
+     * Saved Total Amount To Session
+     *
+     * @return array
+     */
     protected function saveSessionTotalAmount($payload, $token, $signatureHash)
     {
         $totalAmount = $payload['totalAmount']['amount'];
@@ -310,6 +314,11 @@ class Lpay extends AbstractApi
         $this->checkoutSession->setLatitudeTotalAmount($requestHash);
     }
 
+    /**
+     * Validate Total Amount call
+     *
+     * @return array
+     */
     public function validateTotalAmount($token,$signature)
     {
         $totalAmount = $this->formatPrice($this->cart->getQuote()->getBaseGrandTotal());
@@ -320,6 +329,38 @@ class Lpay extends AbstractApi
             return false;
         }
         $this->checkoutSession->unsLatitudeTotalAmount();
+        return true;
+    }
+
+    /**
+     * 
+     * Validate Session
+     *
+     * @return array
+     */
+    public function validateSession($payload)
+    {
+        if($payload['reference'] !== $this->cart->getQuote()->getReservedOrderId()) {
+            throw new  \Magento\Framework\Exception\LocalizedException(__('Invalid Session'));
+        }
+        return true;
+    }
+
+    /**
+     * Validate Signature 
+     *
+     * @return boolean
+     */
+    public function validateSignature($payload)
+    {
+        $payloadValidate = $payload;
+        unset($payloadValidate['signature']);
+        $salesStringStripped              = $this->curlHelper->stripJsonFromSalesString(json_encode($payloadValidate, JSON_UNESCAPED_SLASHES));
+        $salesStringStrippedBase64encoded = $this->curlHelper->base64EncodeSalesString(trim($salesStringStripped));
+        $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded));
+        if($payload['signature'] !== $signatureHash) {
+            throw new  \Magento\Framework\Exception\LocalizedException(__('Invalid Signature'));
+        }
         return true;
     }
 }
