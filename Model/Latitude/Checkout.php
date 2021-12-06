@@ -320,13 +320,13 @@ class Checkout
         $this->quoteRepository->save($this->quote);
         // prepare API
 
-        $totalAmount = round($this->quote->getBaseGrandTotal(), 2);
+        $totalAmount = round($this->quote->getGrandTotal(), 2);
 
 
         /** @noinspection PhpUndefinedMethodInspection */
 
         $this->_getApi()->setAmount($totalAmount)
-            ->setCurrencyCode($this->quote->getBaseCurrencyCode())
+            ->setCurrencyCode($this->quote->getCurrencyCode())
             ->setInvNum($this->quote->getReservedOrderId())
             ->setReturnUrl($returnUrl)
             ->setCancelUrl($cancelUrl)

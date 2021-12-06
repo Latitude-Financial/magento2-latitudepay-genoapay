@@ -293,7 +293,7 @@ class Lpay extends AbstractApi
         }
         $to['products']       =  $products;
         $to['shippingLines']  =   array($this->getShippingDetails());
-        $to['taxAmount']      =  $this->_exportTotal($this->setTaxRequest);
+        $to['taxAmount']      =  $this->_exportTaxAmount($this->setTaxRequest);
         /** @noinspection PhpUndefinedMethodInspection */
         $to['reference']      =  $this->getQuote()->getReservedOrderId();
         $to['totalAmount']    =  $this->_exportTotal($this->setTotalAmountRequest);
@@ -321,8 +321,8 @@ class Lpay extends AbstractApi
      */
     public function validateTotalAmount($token,$signature)
     {
-        $totalAmount = $this->formatPrice($this->cart->getQuote()->getBaseGrandTotal());
-        $currency = $this->cart->getQuote()->getBaseCurrencyCode();
+        $totalAmount = $this->formatPrice($this->cart->getQuote()->getGrandTotal());
+        $currency = $this->cart->getQuote()->getQuoteCurrencyCode();
         $requestHash = sha1(implode('||',[$totalAmount,$currency]));
         if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()){
             $this->checkoutSession->unsLatitudeTotalAmount();

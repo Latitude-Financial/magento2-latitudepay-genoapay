@@ -240,28 +240,43 @@ abstract class AbstractApi extends \Magento\Framework\DataObject
      */
     protected function _exportTotal(array $request)
     {
-        if (!$this->cart) {
+        if (!$this->checkoutSession->getQuote()) {
             return null;
-     }
-
+        }
         $totals = [];
         // always add cart totals, even if line items are not requested
        if ($request) {
-            foreach ($this->cart->getAmounts() as $key => $total) {
-                if (isset($request[$key])) {
-                    $total = round($total, 2);
-                    $totals['amount'] =  $total ? $this->formatPrice($total) :0.00;
-                }else{
-                    $totals['amount'] = 0.00;
-                }
-                try {
-                    $totals['currency'] = $this->config->getCurrentCurrencyCode();
-                } catch (LocalizedException $e) {
-                    $this->logger->critical($e);
-                }
-            }
+            $total = $this->checkoutSession->getQuote()->getGrandTotal();
+            $total = round($total, 2);
+            $totals['amount'] =  $total ? $this->formatPrice($total) :0.00;
+            $totals['currency'] = $this->checkoutSession->getQuote()->getQuoteCurrencyCode();
         }
 
+        return $totals;
+    }
+
+    /**
+     * Prepare line items request
+     *
+     * Returns true if there were line items added
+     *
+     * @param array $request
+     * @return array|null
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
+    protected function _exportTaxAmount(array $request)
+    {
+        if (!$this->checkoutSession->getQuote()) {
+            return null;
+     }
+        $totals = [];
+        // always add cart totals, even if line items are not requested
+       if ($request) {
+            $taxAmount = $this->checkoutSession->getQuote()->getTaxAmount();
+            $taxAmount = round($taxAmount, 2);
+            $totals['amount'] =  $taxAmount ? $this->formatPrice($taxAmount) :0.00;
+            $totals['currency'] = $this->checkoutSession->getQuote()->getQuoteCurrencyCode();
+        }
         return $totals;
     }
 
@@ -277,8 +292,8 @@ abstract class AbstractApi extends \Magento\Framework\DataObject
         $shippinglines = array(
             "carrier" =>  $this->checkoutSession->getQuote()->getShippingAddress()->getShippingMethod(),
             "price" => array(
-                "amount" => $this->formatPrice($this->checkoutSession->getQuote()->getShippingAddress()->getBaseShippingAmount()),
-                "currency" => $this->config->getCurrentCurrencyCode()
+                "amount" => $this->formatPrice($this->checkoutSession->getQuote()->getShippingAddress()->getShippingAmount()),
+                "currency" => $this->checkoutSession->getQuote()->getQuoteCurrencyCode()
             )
         );
 
