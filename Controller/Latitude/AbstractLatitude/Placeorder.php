@@ -23,6 +23,10 @@ class Placeorder extends \Latitude\Payment\Controller\Latitude\AbstractLatitude
     public function execute()
     {
         $post = $this->getRequest()->getParams();
+        if(!$this->_getApi()->validateSignature($post)){
+            $this->_redirect('checkout');
+            return;
+        }
 
         if($post && $post["result"] != "COMPLETED"){
             $this->_redirect('*/*/cancel',['_query' => $post]);

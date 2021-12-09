@@ -750,4 +750,15 @@ class Checkout
             ->setCustomerGroupId(\Magento\Customer\Model\Group::NOT_LOGGED_IN_ID);
         return $this;
     }
+
+    /**
+     * Validate payload
+     *
+     * @param array $payload
+     * @return boolean
+     */
+    public function validatePayload($payload)
+    {
+        return $this->_getApi()->validateSignature($payload);
+    }
 }

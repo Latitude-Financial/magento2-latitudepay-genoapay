@@ -11,6 +11,6 @@
     <section name="StorefrontGenoapayProductInfoMainSection">
         <element name="GenoapaySnippetInstallmentText" type="radio" selector=".latitudepayments-popup__installment-text" timeout="30"/>
         <element name="GenoapaySnippetLearnMoreText" type="block" selector=".lpay_snippet" timeout="30"/>
-        <element name="GenoapaySnippetPopup" type="block" selector=".lpay-modal" timeout="30"/>
+        <element name="GenoapaySnippetPopup" type="block" selector=".lpay-modal-wrapper" timeout="60"/>
     </section>
 </sections>

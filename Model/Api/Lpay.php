@@ -8,6 +8,8 @@ namespace Latitude\Payment\Model\Api;
 
 use Magento\Payment\Model\Cart;
 use Latitude\Payment\Logger\Logger;
+use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Framework\Exception\CouldNotSaveException;
 
 
 /**
@@ -321,6 +323,7 @@ class Lpay extends AbstractApi
      */
     public function validateTotalAmount($token,$signature)
     {
+        $this->checkoutSession->start();
         $totalAmount = $this->formatPrice($this->cart->getQuote()->getGrandTotal());
         $currency = $this->cart->getQuote()->getQuoteCurrencyCode();
         $requestHash = sha1(implode('||',[$totalAmount,$currency]));
@@ -341,7 +344,7 @@ class Lpay extends AbstractApi
     public function validateSession($payload)
     {
         if($payload['reference'] !== $this->cart->getQuote()->getReservedOrderId()) {
-            throw new  \Magento\Framework\Exception\LocalizedException(__('Invalid Session'));
+            throw new CouldNotSaveException(__('Invalid Session'));
         }
         return true;
     }
@@ -359,7 +362,7 @@ class Lpay extends AbstractApi
         $salesStringStrippedBase64encoded = $this->curlHelper->base64EncodeSalesString(trim($salesStringStripped));
         $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded));
         if($payload['signature'] !== $signatureHash) {
-            throw new  \Magento\Framework\Exception\LocalizedException(__('Invalid Signature'));
+            throw new CouldNotSaveException(__('Invalid Signature'));
         }
         return true;
     }

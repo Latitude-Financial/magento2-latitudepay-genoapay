@@ -26,6 +26,12 @@ class Latitude extends \Magento\Payment\Model\Method\AbstractMethod
      */
     protected $storeManager;
 
+    /**
+    * @var \Magento\Directory\Model\CurrencyFactory
+    */
+    public $currencyFactory;
+
+
     protected $_canRefund = true;
 
     protected $_canRefundInvoicePartial = true;
@@ -46,6 +52,7 @@ class Latitude extends \Magento\Payment\Model\Method\AbstractMethod
      * @param \Magento\Framework\Model\ResourceModel\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\AbstractDb $resourceCollection
      * @param \Latitude\Payment\Helper\Curl $curlHelper
+     * @param \Magento\Directory\Model\CurrencyFactory $currencyFactory
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param array $data
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
@@ -60,6 +67,7 @@ class Latitude extends \Magento\Payment\Model\Method\AbstractMethod
         \Magento\Payment\Model\Method\Logger $logger,
         \Magento\Framework\UrlInterface $urlBuilder,
         \Latitude\Payment\Helper\Curl $curlHelper,
+        \Magento\Directory\Model\CurrencyFactory $currencyFactory,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
@@ -81,6 +89,7 @@ class Latitude extends \Magento\Payment\Model\Method\AbstractMethod
         $this->urlBuilder = $urlBuilder;
         $this->curlHelper = $curlHelper;
         $this->storeManager= $storeManager;
+        $this->currencyFactory = $currencyFactory;
     }
 
 
@@ -161,6 +170,9 @@ class Latitude extends \Magento\Payment\Model\Method\AbstractMethod
      */
     protected function getRefundDetails($amount,$order)
     {
+        if($order->getBaseGrandTotal() != $order->getGrandTotal() && $order->getBaseCurrencyCode() != $order->getOrderCurrencyCode()){
+            $amount = $this->convertPrice($amount,$order->getBaseCurrencyCode(),$order->getOrderCurrencyCode());
+        }
         $refundDetails= array(
             "amount" => $amount,
             "currency" => $order->getOrderCurrencyCode()
@@ -204,7 +216,23 @@ class Latitude extends \Magento\Payment\Model\Method\AbstractMethod
         return 'AU' === $country ? true : false;
     }
 
+    /**
+     * Convert price from one currency code to other currency code
+     *
+     * @param int|float $price
+     * @param string $currencyCodeFrom
+     * @param string $currencyCodeTo
+     * @return int|float
+     */
+    protected function convertPrice($price, $currencyCodeFrom, $currencyCodeTo)
+    {
+        $rate = $this->currencyFactory->create()
+                        ->load($currencyCodeFrom)
+                        ->getAnyRate($currencyCodeTo);
+        $convertedPrice = $price * $rate;
 
+        return $convertedPrice;
+    }
 }
 
 
