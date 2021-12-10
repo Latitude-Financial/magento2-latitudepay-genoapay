@@ -89,7 +89,22 @@ define(
                 }
                 if(CancelRedirect){
                     var msg = $.mage.__('There was an error with your payment, please try again or select other payment method');
-                    messageList.addErrorMessage({ message: msg });
+                    if(cookieStorage.getItem('mage-messages')){
+                        var messages = JSON.parse(cookieStorage.getItem('mage-messages'));
+                        if(messages && messages.length){
+                            messages.forEach(message => {
+                                if(message.type == 'error'){
+                                    messageList.addErrorMessage({ message: message.text });
+                                }
+                            });
+                            cookieStorage.setItem('mage-messages','[]');
+                        } else {
+                            messageList.addErrorMessage({ message: msg });
+                        }
+                    } else {
+                        messageList.addErrorMessage({ message: msg });
+                    }
+                    
                 }
             }
 
