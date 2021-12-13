@@ -30,7 +30,6 @@ class Placeorder extends \Latitude\Payment\Controller\Latitude\AbstractLatitude
         }
 
         try {
-
             $this->_initCheckout();
             $tokenId = $post["token"];
             /**  Populate quote  with information about billing and shipping addresses*/

@@ -26,6 +26,10 @@ class Fail extends GetToken
             // Log payload callback
             $post = $this->getRequest()->getParams();
             $this->logCallback($post);
+            if(!$this->_getApi()->validateSignature($post)){
+                $this->_redirect('checkout');
+                return;
+            }
             // if there is an order - cancel it
             /** @noinspection PhpUndefinedMethodInspection */
             $orderId = $this->_getCheckoutSession()->getLastOrderId();

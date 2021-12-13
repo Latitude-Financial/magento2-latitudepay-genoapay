@@ -8,6 +8,8 @@ namespace Latitude\Payment\Model\Api;
 
 use Magento\Payment\Model\Cart;
 use Latitude\Payment\Logger\Logger;
+use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Framework\Exception\CouldNotSaveException;
 
 
 /**
@@ -237,8 +239,7 @@ class Lpay extends AbstractApi
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      * @noinspection PhpUndefinedMethodInspection
      */
-
-    protected function _prepareLatitudeCallRequest()
+    public function _prepareLatitudeCallRequest()
     {
         $to = [];
         /** @noinspection PhpUndefinedMethodInspection */
@@ -294,7 +295,7 @@ class Lpay extends AbstractApi
         }
         $to['products']       =  $products;
         $to['shippingLines']  =   array($this->getShippingDetails());
-        $to['taxAmount']      =  $this->_exportTotal($this->setTaxRequest);
+        $to['taxAmount']      =  $this->_exportTaxAmount($this->setTaxRequest);
         /** @noinspection PhpUndefinedMethodInspection */
         $to['reference']      =  $this->getQuote()->getReservedOrderId();
         $to['totalAmount']    =  $this->_exportTotal($this->setTotalAmountRequest);
@@ -302,6 +303,11 @@ class Lpay extends AbstractApi
         return $to;
     }
 
+    /**
+     * Saved Total Amount To Session
+     *
+     * @return array
+     */
     protected function saveSessionTotalAmount($payload, $token, $signatureHash)
     {
         $totalAmount = $payload['totalAmount']['amount'];
@@ -310,10 +316,16 @@ class Lpay extends AbstractApi
         $this->checkoutSession->setLatitudeTotalAmount($requestHash);
     }
 
+    /**
+     * Validate Total Amount call
+     *
+     * @return array
+     */
     public function validateTotalAmount($token,$signature)
     {
-        $totalAmount = $this->formatPrice($this->cart->getQuote()->getBaseGrandTotal());
-        $currency = $this->cart->getQuote()->getBaseCurrencyCode();
+        $this->checkoutSession->start();
+        $totalAmount = $this->formatPrice($this->cart->getQuote()->getGrandTotal());
+        $currency = $this->cart->getQuote()->getQuoteCurrencyCode();
         $requestHash = sha1(implode('||',[$totalAmount,$currency]));
         if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()){
             $this->checkoutSession->unsLatitudeTotalAmount();
@@ -323,10 +335,34 @@ class Lpay extends AbstractApi
         return true;
     }
 
-    public function validatePayload($payload)
+    /**
+     * 
+     * Validate Session
+     *
+     * @return array
+     */
+    public function validateSession($payload)
     {
         if($payload['reference'] !== $this->cart->getQuote()->getReservedOrderId()) {
-            throw new  \Magento\Framework\Exception\LocalizedException(__('Invalid Token'));
+            throw new CouldNotSaveException(__('Invalid Session'));
+        }
+        return true;
+    }
+
+    /**
+     * Validate Signature 
+     *
+     * @return boolean
+     */
+    public function validateSignature($payload)
+    {
+        $payloadValidate = $payload;
+        unset($payloadValidate['signature']);
+        $salesStringStripped              = $this->curlHelper->stripJsonFromSalesString(json_encode($payloadValidate, JSON_UNESCAPED_SLASHES));
+        $salesStringStrippedBase64encoded = $this->curlHelper->base64EncodeSalesString(trim($salesStringStripped));
+        $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded));
+        if($payload['signature'] !== $signatureHash) {
+            throw new CouldNotSaveException(__('Invalid Signature'));
         }
         return true;
     }

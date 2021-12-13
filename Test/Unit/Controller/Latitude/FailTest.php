@@ -181,6 +181,11 @@ class FailTest extends LatitudeTestCase
                 ResultJsonFactory::class,
                 ['create']
             );
+        $apiObject = $this->basicMock(\Latitude\Payment\Model\Api\Lpay::class);
+
+        $apiObject->expects($this->any())
+            ->method('validateSignature')
+            ->willReturn(true);
 
         // objectManagerMock
         $objectManagerReturns = [
@@ -243,6 +248,7 @@ class FailTest extends LatitudeTestCase
                 'messageManager'  => $this->messageManagerMock,
                 'checkoutFactory' => $this->latitudeCheckoutFactoryMock,
                 'resultFactory'   => $this->resultFactoryMock,
+                'api'             => $apiObject
             ]
         );
     }

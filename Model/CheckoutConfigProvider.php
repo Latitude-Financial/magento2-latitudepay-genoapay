@@ -149,7 +149,7 @@ class CheckoutConfigProvider implements ConfigProviderInterface
         /** @noinspection PhpUndefinedMethodInspection */
         $config = [
             'latitudepayments' => [
-                self::LATITUDEPAY => $this->getViewFileUrl('Latitude_Payment::images/latitude-pay-logo.svg'),
+                self::LATITUDEPAY => $this->getViewFileUrl('Latitude_Payment::images/latitude-pay-logo.png'),
                 self::GENOAPAY => $this->getViewFileUrl('Latitude_Payment::images/genoapay_logo_header.svg'),
                 self::INSTALLMENTNO => $this->getInstallmentNo(),
                 self::CURRENCY_SYMBOL => $this->currency->getCurrencySymbol(),

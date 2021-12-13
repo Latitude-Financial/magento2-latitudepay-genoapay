@@ -21,6 +21,10 @@ class Cancel extends \Latitude\Payment\Controller\Latitude\AbstractLatitude
             $this->_initToken(false);
             // Log payload callback
             $post = $this->getRequest()->getParams();
+            if(!$this->_getApi()->validateSignature($post)){
+                $this->_redirect('checkout');
+                return;
+            }
             $this->logCallback($post);
             // if there is an order - cancel it
             /** @noinspection PhpUndefinedMethodInspection */

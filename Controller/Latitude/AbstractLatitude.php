@@ -16,9 +16,28 @@ use Magento\Quote\Api\Data\CartInterface;
 abstract class AbstractLatitude extends AppAction  implements RedirectLoginInterface
 {
     /**
+     * API instance
+     *
+     * @var \Latitude\Payment\Model\Api\Lpay
+     */
+    protected $api;
+
+    /**
+     * @var \Latitude\Payment\Model\Api\Type\Factory
+     */
+    protected $apiTypeFactory;
+
+    /**
      * @var \Latitude\Payment\Model\Latitude\Checkout
      */
     protected $checkout;
+
+    /**
+     * Api Model Type
+     *
+     * @var string
+     */
+    protected $apiType = \Latitude\Payment\Model\Api\Lpay::class;
 
     /**
      * Internal cache of checkout models
@@ -129,12 +148,13 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
      * @param \Magento\Framework\Session\Generic $latitudeSession
      * @param \Magento\Framework\Url\Helper\Data $urlHelper
      * @param \Magento\Customer\Model\Url $customerUrl
-     *@param \Latitude\Payment\Logger\Logger  $logger
-     *@param \Latitude\Payment\Helper\Curl $curllHelper
-     *@param \Magento\Checkout\Helper\Data $checkoutHelper
-     *@param \Magento\Framework\Controller\ResultFactory $resultFactory
-     *@param \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
-     *@param \Latitude\Payment\Helper\Config $configHelper
+     * @param \Latitude\Payment\Logger\Logger  $logger
+     * @param \Latitude\Payment\Helper\Curl $curllHelper
+     * @param \Magento\Checkout\Helper\Data $checkoutHelper
+     * @param \Magento\Framework\Controller\ResultFactory $resultFactory
+     * @param \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
+     * @param \Latitude\Payment\Helper\Config $configHelper
+     * @param \Latitude\Payment\Model\Api\Type\Factory $apiTypeFactory
      */
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
@@ -150,7 +170,8 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
         \Magento\Checkout\Helper\Data $checkoutHelper,
         \Magento\Framework\Controller\ResultFactory $resultFactory,
         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
-        \Latitude\Payment\Helper\Config $configHelper
+        \Latitude\Payment\Helper\Config $configHelper,
+        \Latitude\Payment\Model\Api\Type\Factory $apiTypeFactory
     ) {
         $this->customerSession = $customerSession;
         $this->checkoutSession = $checkoutSession;
@@ -165,6 +186,7 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
         $this->resultFactory   = $resultFactory;
         $this->resultJsonFactory = $resultJsonFactory;
         $this->configHelper     = $configHelper;
+        $this->apiTypeFactory = $apiTypeFactory;
         parent::__construct($context);
         $configMethod= $this->getRequest()->getParam('method');
         $parameters = ['params' => [$configMethod]];
@@ -347,6 +369,19 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
         ) {
             $this->logger->info('Order Status (RESPONSE): ', $payload);
         }
+    }
+
+    /**
+     * Get api
+     *
+     * @return \Latitude\Payment\Model\Api\Lpay
+     */
+    protected function _getApi()
+    {
+        if (null === $this->api) {
+            $this->api = $this->apiTypeFactory->create($this->apiType)->setConfigObject($this->config);
+        }
+        return $this->api;
     }
 
     /**

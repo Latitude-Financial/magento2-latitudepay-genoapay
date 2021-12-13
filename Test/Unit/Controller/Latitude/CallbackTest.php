@@ -33,6 +33,7 @@ use Magento\Checkout\Model\Type\Onepage;
 use Magento\Framework\Message\ManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Magento\Framework\App\Request\Http;
+use Latitude\Payment\Model\Api\Type\Factory;
 /**
  * @covers \Latitude\Payment\Controller\Latitude\Callback
  */
@@ -115,6 +116,9 @@ class CallbackTest extends LatitudeTestCase
     /** @var LatitudeCheckout|MockObject */
     protected $latitudeCheckoutMock;
 
+    /** @var LatitudeCheckout|MockObject */
+    protected $apiTypeFactoryMock;
+
     /**
      * @inheritDoc
      */
@@ -154,6 +158,12 @@ class CallbackTest extends LatitudeTestCase
                 ResultJsonFactory::class,
                 ['create']
             );
+
+        $apiObject = $this->basicMock(\Latitude\Payment\Model\Api\Lpay::class);
+
+        $apiObject->expects($this->any())
+            ->method('validateSignature')
+            ->willReturn(true);
 
         // objectManagerMock
         $objectManagerReturns = [
@@ -208,7 +218,8 @@ class CallbackTest extends LatitudeTestCase
                 'checkoutSession' => $this->checkoutSessionMock,
                 'messageManager'  => $this->messageManagerMock,
                 'checkoutFactory' => $this->latitudeCheckoutFactoryMock,
-                'resultJsonFactory' => $this->resultJsonFactoryMock
+                'resultJsonFactory' => $this->resultJsonFactoryMock,
+                'api' => $apiObject
             ]
         );
     }

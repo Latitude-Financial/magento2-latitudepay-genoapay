@@ -167,6 +167,14 @@ class Checkout
      * @var \Magento\Framework\Message\ManagerInterface
      */
     protected $messageManager;
+    /**
+     * @var \Latitude\Payment\Helper\Curl
+     */
+    protected $curlHelper;
+    /**
+     * @var \Latitude\Payment\Helper\Config
+     */
+    protected $configHelper;
 
     /**
      * @param \Latitude\Payment\Logger\Logger $logger
@@ -187,6 +195,8 @@ class Checkout
      * @param \Latitude\Payment\Model\Config $Config
      * @param \Magento\Framework\Session\Generic $latitudeSession
      * @param \Magento\Framework\Message\ManagerInterface $messageManager
+     * @param \Latitude\Payment\Helper\Curl $curlHelper
+     * @param \Latitude\Payment\Helper\Config $configHelper
      * @throws \Exception
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
@@ -208,7 +218,9 @@ class Checkout
         \Magento\Quote\Model\Quote\TotalsCollector $totalsCollector,
         \Latitude\Payment\Model\Config $Config,
         \Magento\Framework\Session\Generic $latitudeSession,
-        \Magento\Framework\Message\ManagerInterface $messageManager
+        \Magento\Framework\Message\ManagerInterface $messageManager,
+        \Latitude\Payment\Helper\Curl $curlHelper,
+        \Latitude\Payment\Helper\Config $configHelper
     ) {
         $this->logger = $logger;
         $this->taxData = $taxData;
@@ -229,6 +241,8 @@ class Checkout
         $this->quote = $checkoutSession->getQuote();
         $this->latitudeSession = $latitudeSession;
         $this->messageManager = $messageManager;
+        $this->curlHelper      = $curlHelper;
+        $this->configHelper      = $configHelper;
 
     }
 
@@ -306,13 +320,13 @@ class Checkout
         $this->quoteRepository->save($this->quote);
         // prepare API
 
-        $totalAmount = round($this->quote->getBaseGrandTotal(), 2);
+        $totalAmount = round($this->quote->getGrandTotal(), 2);
 
 
         /** @noinspection PhpUndefinedMethodInspection */
 
         $this->_getApi()->setAmount($totalAmount)
-            ->setCurrencyCode($this->quote->getBaseCurrencyCode())
+            ->setCurrencyCode($this->quote->getCurrencyCode())
             ->setInvNum($this->quote->getReservedOrderId())
             ->setReturnUrl($returnUrl)
             ->setCancelUrl($cancelUrl)
@@ -463,7 +477,8 @@ class Checkout
     {
         $token = $payload['token'];
         $signature = $payload['signature'];
-        $this->_getApi()->validatePayload($payload);
+        $this->_getApi()->validateSignature($payload);
+        $this->_getApi()->validateSession($payload);
 
         if ($this->getCheckoutMethod() == \Magento\Checkout\Model\Type\Onepage::METHOD_GUEST) {
             $this->prepareGuestQuote();
@@ -734,5 +749,16 @@ class Checkout
             ->setCustomerIsGuest(true)
             ->setCustomerGroupId(\Magento\Customer\Model\Group::NOT_LOGGED_IN_ID);
         return $this;
+    }
+
+    /**
+     * Validate payload
+     *
+     * @param array $payload
+     * @return boolean
+     */
+    public function validatePayload($payload)
+    {
+        return $this->_getApi()->validateSignature($payload);
     }
 }
