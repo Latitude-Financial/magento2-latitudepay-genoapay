@@ -139,6 +139,12 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
      * @var \Latitude\Payment\Helper\Config
      */
     protected $configHelper;
+
+    /**
+     * @var \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress
+     */
+    protected $remoteAddress;
+
     /**
      * @param \Magento\Framework\App\Action\Context $context
      * @param \Magento\Customer\Model\Session $customerSession
@@ -154,6 +160,7 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
      * @param \Magento\Framework\Controller\ResultFactory $resultFactory
      * @param \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
      * @param \Latitude\Payment\Helper\Config $configHelper
+     * @param \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
      * @param \Latitude\Payment\Model\Api\Type\Factory $apiTypeFactory
      */
     public function __construct(
@@ -171,6 +178,7 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
         \Magento\Framework\Controller\ResultFactory $resultFactory,
         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
         \Latitude\Payment\Helper\Config $configHelper,
+        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress,
         \Latitude\Payment\Model\Api\Type\Factory $apiTypeFactory
     ) {
         $this->customerSession = $customerSession;
@@ -187,6 +195,7 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
         $this->resultJsonFactory = $resultJsonFactory;
         $this->configHelper     = $configHelper;
         $this->apiTypeFactory = $apiTypeFactory;
+        $this->remoteAddress = $remoteAddress;
         parent::__construct($context);
         $configMethod= $this->getRequest()->getParam('method');
         $parameters = ['params' => [$configMethod]];
@@ -367,6 +376,8 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
             $quote->getPayment()->getMethod() &&
             $this->configHelper->getConfigData('logging',$quote->getStoreId(),$quote->getPayment()->getMethod())
         ) {
+            $remoteIp = $this->remoteAddress->getRemoteAddress();
+            $this->logger->info('Get Callback From Remote IP: ', [$remoteIp]);
             $this->logger->info('Order Status (RESPONSE): ', $payload);
         }
     }

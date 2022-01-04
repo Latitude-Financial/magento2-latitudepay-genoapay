@@ -151,6 +151,11 @@ class Checkout
     protected $quoteManagement;
 
     /**
+     * @var \Magento\Sales\Api\Data\OrderInterface
+     */
+    protected $orderData;
+
+    /**
      * @var \Latitude\Payment\Model\Api\Type\Factory
      */
     protected $apiTypeFactory;
@@ -177,6 +182,11 @@ class Checkout
     protected $configHelper;
 
     /**
+     * @var \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress
+     */
+    protected $remoteAddress;
+
+    /**
      * @param \Latitude\Payment\Logger\Logger $logger
      * @param \Magento\Tax\Helper\Data $taxData
      * @param \Magento\Checkout\Helper\Data $checkoutData
@@ -191,12 +201,14 @@ class Checkout
      * @param \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository
      * @param OrderSender $orderSender
      * @param \Magento\Quote\Api\CartRepositoryInterface $quoteRepository
+     * @param \Magento\Sales\Api\Data\OrderInterface $orderData
      * @param \Magento\Quote\Model\Quote\TotalsCollector $totalsCollector
      * @param \Latitude\Payment\Model\Config $Config
      * @param \Magento\Framework\Session\Generic $latitudeSession
      * @param \Magento\Framework\Message\ManagerInterface $messageManager
      * @param \Latitude\Payment\Helper\Curl $curlHelper
      * @param \Latitude\Payment\Helper\Config $configHelper
+     * @param \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
      * @throws \Exception
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
@@ -215,12 +227,14 @@ class Checkout
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         OrderSender $orderSender,
         \Magento\Quote\Api\CartRepositoryInterface $quoteRepository,
+        \Magento\Sales\Api\Data\OrderInterface $orderData,
         \Magento\Quote\Model\Quote\TotalsCollector $totalsCollector,
         \Latitude\Payment\Model\Config $Config,
         \Magento\Framework\Session\Generic $latitudeSession,
         \Magento\Framework\Message\ManagerInterface $messageManager,
         \Latitude\Payment\Helper\Curl $curlHelper,
-        \Latitude\Payment\Helper\Config $configHelper
+        \Latitude\Payment\Helper\Config $configHelper,
+        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
     ) {
         $this->logger = $logger;
         $this->taxData = $taxData;
@@ -236,6 +250,7 @@ class Checkout
         $this->customerRepository = $customerRepository;
         $this->orderSender = $orderSender;
         $this->quoteRepository = $quoteRepository;
+        $this->orderData = $orderData;
         $this->totalsCollector = $totalsCollector;
         $this->config = $Config;
         $this->quote = $checkoutSession->getQuote();
@@ -243,6 +258,7 @@ class Checkout
         $this->messageManager = $messageManager;
         $this->curlHelper      = $curlHelper;
         $this->configHelper      = $configHelper;
+        $this->remoteAddress = $remoteAddress;
 
     }
 
@@ -493,13 +509,18 @@ class Checkout
         }
         
         if($this->_getApi()->validateTotalAmount($token,$signature)) {
+            $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
+            $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+            $order->addStatusToHistory($order->getStatus(), '<strong style="color:green;">Payment success.</strong>'.'<br/>Token:'.$token);
+            /*
             $payment = $order->getPayment();
             $payment->setTransactionId($token)
                 ->setCurrencyCode($order->getBaseCurrencyCode())
                 ->setParentTransactionId($payment->getTransactionId())
                 ->setShouldCloseParentTransaction(true)
                 ->setIsTransactionClosed(0)
-                ->registerCaptureNotification($order->getBaseGrandTotal());    
+                ->registerCaptureNotification($order->getBaseGrandTotal());
+            */    
         } else {
             $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
             $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
@@ -530,6 +551,53 @@ class Checkout
                 break;
         }
         $this->order = $order;
+    }
+
+    /**
+     * Update the order when callback returned from Latitude until this moment all order data must be valid.
+     *
+     * @param string $token
+     * @return void
+     */
+    public function update($payload)
+    {
+        $token = $payload['token'];
+        $signature = $payload['signature'];
+        $incrementId = $payload['reference'];
+        $this->_getApi()->validateSignature($payload);
+        $remoteIp = $this->remoteAddress->getRemoteAddress();
+        $this->_getApi()->validateRemoteAddressCallback($remoteIp);
+        $order = $this->orderData->loadByIncrementId($incrementId);
+
+        if (!$order && $order->getId()) {
+            return false;
+        }
+        
+        try {
+            switch($payload["result"]) {
+                case "COMPLETED":
+                    $payment = $order->getPayment();
+                    $payment->setTransactionId($token)
+                        ->setCurrencyCode($order->getBaseCurrencyCode())
+                        ->setParentTransactionId($payment->getTransactionId())
+                        ->setShouldCloseParentTransaction(true)
+                        ->setIsTransactionClosed(0)
+                        ->registerCaptureNotification($order->getBaseGrandTotal());
+                    break;
+                case "FAILED":
+                case "CANCELED": 
+                    $order->cancel();
+                    break;
+            }
+        } catch(\Exception $e) {
+            $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
+            $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Can not capture order online.</strong>'.$e->getMessage());
+        }
+
+        $order->save();
+        $this->order = $order;
+        return $this->order;
     }
 
     /**

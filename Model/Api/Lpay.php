@@ -366,4 +366,14 @@ class Lpay extends AbstractApi
         }
         return true;
     }
+
+    /**
+     * Validate Remote Ip Address Callback 
+     *
+     * @return boolean
+     */
+    public function validateRemoteAddressCallback($ip)
+    {
+        return true;
+    }
 }
