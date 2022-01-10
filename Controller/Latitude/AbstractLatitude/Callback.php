@@ -41,9 +41,6 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
      */
     public function execute()
     {
-        if (!$this->getRequest()->isPost()) {
-            return;
-        }
         $result = [];
         try {
             // Log payload callback
