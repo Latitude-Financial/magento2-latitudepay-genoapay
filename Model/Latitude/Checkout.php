@@ -565,8 +565,7 @@ class Checkout
         $signature = $payload['signature'];
         $incrementId = $payload['reference'];
         $this->_getApi()->validateSignature($payload);
-        $remoteIp = $this->remoteAddress->getRemoteAddress();
-        $this->_getApi()->validateRemoteAddressCallback($remoteIp);
+        $this->_getApi()->validateRemoteAddressCallback();
         $order = $this->orderData->loadByIncrementId($incrementId);
 
         if (!$order && $order->getId()) {

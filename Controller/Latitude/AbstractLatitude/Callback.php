@@ -41,15 +41,17 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
      */
     public function execute()
     {
+        $this->logger->info('Callback received');
+        $this->logger->info('Raw (RESPONSE): ', $_SERVER);
         $result = [];
         try {
             // Log payload callback
-            $post = $this->getRequest()->getPostValue();
+            $post = $this->getRequest()->getParams();
             if(empty($post)){
                 return;
             }
-            $this->logger->info('Callback received');
-            $this->logCallback($post);
+            unset($post['method']);
+            $this->logger->info('Order Status (RESPONSE): ', $post);
             $this->_initToken(false);
             $incrementId = $post['reference'];
             $orderFactory = ObjectManager::getInstance()->get(OrderFactory::class);
@@ -65,6 +67,12 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
                 return $resultJson;
             }
             $result = ['success' => true];
+        } catch (RemoteServiceUnavailableException $e) {
+            $this->logger->error($e->getMessage(),["errors" => __('Unable to get callback message')]);
+            $this->getResponse()->setStatusHeader(503, '1.1', 'Service Unavailable')->sendResponse();
+            /** @todo eliminate usage of exit statement */
+            // phpcs:ignore Magento2.Security.LanguageConstruct.ExitUsage
+            exit;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage(), array("errors" => __('Unable to get callback message')));
             $result = ['error' => false,'message' => $e->getMessage()];

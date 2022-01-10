@@ -376,7 +376,7 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
             $quote->getPayment()->getMethod() &&
             $this->configHelper->getConfigData('logging',$quote->getStoreId(),$quote->getPayment()->getMethod())
         ) {
-            $remoteIp = $this->remoteAddress->getRemoteAddress();
+            $remoteIp = $this->getUserIpAddr();
             $this->logger->info('Get Callback From Remote IP: ', [$remoteIp]);
             $this->logger->info('Order Status (RESPONSE): ', $payload);
         }
@@ -393,6 +393,27 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
             $this->api = $this->apiTypeFactory->create($this->apiType)->setConfigObject($this->config);
         }
         return $this->api;
+    }
+
+    /**
+     * Get User IP
+     *
+     * @return string
+     */
+    protected function getUserIpAddr()
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) //if from shared
+        {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+        else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))   //if from a proxy
+        {
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+        else
+        {
+            return $_SERVER['REMOTE_ADDR'];
+        }
     }
 
     /**

@@ -368,12 +368,34 @@ class Lpay extends AbstractApi
     }
 
     /**
-     * Validate Remote Ip Address Callback 
+     * Validate Remote Ip Address Callback
      *
      * @return boolean
      */
-    public function validateRemoteAddressCallback($ip)
+    public function validateRemoteAddressCallback()
     {
-        return true;
+        $whitelistIps = ['3.106.103.14'];
+        return in_array($this->getUserIpAddr(),$whitelistIps);
+    }
+
+    /**
+     * Get User IP
+     *
+     * @return string
+     */
+    protected function getUserIpAddr()
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) //if from shared
+        {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+        else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))   //if from a proxy
+        {
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+        else
+        {
+            return $_SERVER['REMOTE_ADDR'];
+        }
     }
 }
