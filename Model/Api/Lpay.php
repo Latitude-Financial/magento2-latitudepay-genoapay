@@ -18,6 +18,7 @@ use Magento\Framework\Exception\CouldNotSaveException;
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD)
  */
 class Lpay extends AbstractApi
 {
@@ -380,7 +381,8 @@ class Lpay extends AbstractApi
 
     /**
      * Get User IP
-     * @SuppressWarnings(PHPMD.Superglobals)
+     * 
+     * @SuppressWarnings(PHPMD)
      *
      * @return string
      */
