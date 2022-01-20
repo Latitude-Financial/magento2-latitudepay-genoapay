@@ -10,7 +10,7 @@
           xsi:noNamespaceSchemaLocation="urn:magento:mftf:Page/etc/SectionObject.xsd">
     <section name="StorefrontLatitudepayProductInfoMainSection">
         <element name="LatitudepaySnippetInstallmentText" type="radio" selector=".latitudepayments-popup__installment-text" timeout="30"/>
-        <element name="LatitudepaySnippetLearnMoreText" type="block" selector=".lpay_snippet" timeout="30"/>
+        <element name="LatitudepaySnippetLearnMoreText" type="block" selector=".lpay_snippet" timeout="60"/>
         <element name="LatitudepaySnippetPopup" type="block" selector=".lpay-modal-wrapper" timeout="60"/>
     </section>
 </sections>
