@@ -126,7 +126,7 @@ commands: # a reusable command with parameters
 jobs:
   deploy:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.4.2-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -180,7 +180,7 @@ jobs:
             bin/git_release.sh
   php74-m237:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.3.7-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.3.7-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -230,7 +230,7 @@ jobs:
       - artifacts
   php73-m242:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.4.2-php-7.3
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.3
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -283,7 +283,7 @@ jobs:
       - artifacts
   php74-m242:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.4.2-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
