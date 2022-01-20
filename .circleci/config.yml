@@ -80,6 +80,7 @@ commands: # a reusable command with parameters
          name: "PHP CodeSniffer"
          command: |
             phpcs --config-set show_warnings 0
+            phpcs --config-set installed_paths /root/.composer/vendor/magento/magento-coding-standard,/root/.composer/vendor/phpcompatibility/php-compatibility
             phpcs --standard=Magento2 --exclude=PHPCompatibility --extensions=php --ignore=*/vendor/,*/Test/ --colors -s -p -v /var/www/html/app/code/Latitude/Payment
       # - run:
       #    name: "Run Backward Compatibility Check"

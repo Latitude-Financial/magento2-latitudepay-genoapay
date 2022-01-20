@@ -54,8 +54,10 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
             $this->logger->info('Order Status (RESPONSE): ', $post);
             $this->_initToken(false);
             $incrementId = $post['reference'];
+            // @codingStandardsIgnoreStart
             $orderFactory = ObjectManager::getInstance()->get(OrderFactory::class);
             $quoteFactory = ObjectManager::getInstance()->get(QuoteFactory::class);
+            // @codingStandardsIgnoreEnd
             $order = $orderFactory->create()->loadByIncrementId($incrementId);
             $quote = $quoteFactory->create()->load($order->getQuoteId());
             $this->_initCheckout($quote);

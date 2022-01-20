@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile
 /**
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
@@ -38,6 +39,10 @@ class Checkbox extends \Magento\Config\Block\System\Config\Form\Field
         return $this->_toHtml();
     }
     
+    /**
+     * 
+     * @return array
+     */
     public function getValues()
     {
         $values = [];
@@ -49,6 +54,7 @@ class Checkbox extends \Magento\Config\Block\System\Config\Form\Field
 
         return $values;
     }
+
     /**
      * 
      * @param  $name 
@@ -58,9 +64,9 @@ class Checkbox extends \Magento\Config\Block\System\Config\Form\Field
     {
         return in_array($name, $this->getCheckedValues());
     }
+
     /**
-     * 
-     *get the checked value from config
+     * Get the checked value from config
      */
     public function getCheckedValues()
     {
