@@ -399,6 +399,7 @@ abstract class AbstractLatitude extends AppAction  implements RedirectLoginInter
      * Get User IP
      *
      * @return string
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
     protected function getUserIpAddr()
     {

@@ -381,10 +381,9 @@ class Lpay extends AbstractApi
 
     /**
      * Get User IP
-     * 
-     * @SuppressWarnings(PHPMD)
      *
      * @return string
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
     protected function getUserIpAddr()
     {

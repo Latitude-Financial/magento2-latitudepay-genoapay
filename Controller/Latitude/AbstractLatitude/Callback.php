@@ -36,7 +36,7 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
 
     /**
      * Callback Latitudepay Checkout
-     *
+     * @SuppressWarnings(PHPMD.Superglobals)
      * @return \Magento\Framework\Controller\Result\Redirect
      */
     public function execute()
