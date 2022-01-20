@@ -119,6 +119,7 @@ commands: # a reusable command with parameters
       - run:
           name: "Generate Allure Report"
           command: |
+            mkdir -p dev/tests/acceptance/tests/_output/allure-report
             allure generate dev/tests/acceptance/tests/_output/ --clean -o dev/tests/acceptance/tests/_output/allure-report
       - store_test_results:
           path: /var/www/html/dev/tests/acceptance/tests/_output/allure-report
