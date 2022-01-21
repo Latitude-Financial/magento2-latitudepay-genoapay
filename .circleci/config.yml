@@ -128,7 +128,7 @@ commands: # a reusable command with parameters
 jobs:
   deploy:
     docker:
-      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.3-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -283,9 +283,9 @@ jobs:
       - lp-tests
       - m2-tests
       - artifacts
-  php74-m242:
+  php74-m243:
     docker:
-      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.3-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -331,7 +331,7 @@ jobs:
     working_directory: /var/www/html/app/code/Latitude/Payment
     steps:
       - setup:
-          version: "php74-m242"
+          version: "php74-m243"
       - cs-tests
       - lp-tests
       - m2-tests
@@ -341,20 +341,20 @@ workflows:
   main:
     jobs:
       - php73-m242
-      - php74-m242:
+      - php74-m243:
           requires:
               - php73-m242
       - github-release:
           requires:
             - php73-m242
-            - php74-m242
+            - php74-m243
           filters:
             branches:
               only: master
       # - deploy:
       #     requires:
       #       - php73-m242
-      #       - php74-m242
+      #       - php74-m243
       #     filters:
       #       branches:
       #         only: staging
