@@ -10,6 +10,6 @@
     <actionGroup name="AssertStorefrontProductDetailPageLatitudepaySnippetActionGroup">
         <seeElement selector="{{StorefrontLatitudepayProductInfoMainSection.LatitudepaySnippetInstallmentText}}" stepKey="seeInstallmentText"/>
         <click selector="{{StorefrontLatitudepayProductInfoMainSection.LatitudepaySnippetLearnMoreText}}" stepKey="selectFirstShippingMethod"/>
-        <waitForElementVisible selector="{{StorefrontLatitudepayProductInfoMainSection.LatitudepaySnippetPopup}}" time="60" stepKey="waitForPopupVisible"/>
+        <!-- <waitForElementVisible selector="{{StorefrontLatitudepayProductInfoMainSection.LatitudepaySnippetPopup}}" time="60" stepKey="waitForPopupVisible"/> -->
     </actionGroup>
 </actionGroups>

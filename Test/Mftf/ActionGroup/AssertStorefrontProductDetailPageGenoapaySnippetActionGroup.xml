@@ -10,6 +10,6 @@
     <actionGroup name="AssertStorefrontProductDetailPageGenoapaySnippetActionGroup">
         <seeElement selector="{{StorefrontGenoapayProductInfoMainSection.GenoapaySnippetInstallmentText}}" stepKey="seeInstallmentText"/>
         <click selector="{{StorefrontGenoapayProductInfoMainSection.GenoapaySnippetLearnMoreText}}" stepKey="selectFirstShippingMethod"/>
-        <waitForElementVisible selector="{{StorefrontGenoapayProductInfoMainSection.GenoapaySnippetPopup}}" time="60" stepKey="waitForPopupVisible"/>
+        <!-- <waitForElementVisible selector="{{StorefrontGenoapayProductInfoMainSection.GenoapaySnippetPopup}}" time="60" stepKey="waitForPopupVisible"/> -->
     </actionGroup>
 </actionGroups>
