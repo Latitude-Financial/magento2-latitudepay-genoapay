@@ -340,21 +340,21 @@ workflows:
   version: 2
   main:
     jobs:
-      - php73-m242
-      - php74-m243:
+      - php74-m237
+      - php74-m242:
           requires:
-              - php73-m242
+              - php74-m237
       - github-release:
           requires:
-            - php73-m242
-            - php74-m243
+            - php74-m237
+            - php74-m242
           filters:
             branches:
               only: master
       # - deploy:
       #     requires:
-      #       - php73-m242
-      #       - php74-m243
+      #       - php74-m237
+      #       - php74-m242
       #     filters:
       #       branches:
       #         only: staging
