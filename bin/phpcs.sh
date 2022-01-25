@@ -5,5 +5,5 @@ docker-compose exec magento \
 docker-compose exec magento \
 	phpcs --config-set installed_paths /root/.composer/vendor/magento/magento-coding-standard,/root/.composer/vendor/phpcompatibility/php-compatibility
 docker-compose exec magento \
-	phpcs --standard=Magento2 --extensions=php --ignore=*/vendor/,*/Tests/ --colors -s -p -v /var/www/html/app/code/Latitude/Payment
+	phpcs --standard=/var/www/html/app/code/Latitude/Payment/ruleset.xml --extensions=php --ignore=*/vendor/,*/Tests/ --colors -s -p -v /var/www/html/app/code/Latitude/Payment
 	$*

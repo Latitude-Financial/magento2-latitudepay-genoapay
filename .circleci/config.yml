@@ -81,7 +81,7 @@ commands: # a reusable command with parameters
          command: |
             phpcs --config-set show_warnings 0
             phpcs --config-set installed_paths /root/.composer/vendor/magento/magento-coding-standard,/root/.composer/vendor/phpcompatibility/php-compatibility
-            phpcs --standard=Magento2 --extensions=php --ignore=*/vendor/,*/Test/ --colors -s -p -v /var/www/html/app/code/Latitude/Payment
+            phpcs --standard=/var/www/html/app/code/Latitude/Payment/ruleset.xml --extensions=php --ignore=*/vendor/,*/Test/ --colors -s -p -v /var/www/html/app/code/Latitude/Payment
       # - run:
       #    name: "Run Backward Compatibility Check"
       #    command: |
