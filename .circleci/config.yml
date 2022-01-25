@@ -230,9 +230,9 @@ jobs:
       - lp-tests
       - m2-tests
       - artifacts
-  php73-m242:
+  php74-m242:
     docker:
-      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.3
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
