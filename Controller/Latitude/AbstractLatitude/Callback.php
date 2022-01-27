@@ -14,6 +14,7 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Exception\RemoteServiceUnavailableException;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\Quote\Model\QuoteManagement;
 
 class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude implements CsrfAwareActionInterface
 {
@@ -47,9 +48,6 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
         try {
             // Log payload callback
             $post = $this->getRequest()->getParams();
-            if(empty($post)){
-                return;
-            }
             unset($post['method']);
             $this->logger->info('Order Status (RESPONSE): ', $post);
             $this->_initToken(false);
@@ -57,18 +55,40 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
             // @codingStandardsIgnoreStart
             $orderFactory = ObjectManager::getInstance()->get(OrderFactory::class);
             $quoteFactory = ObjectManager::getInstance()->get(QuoteFactory::class);
+            $quoteManagement = ObjectManager::getInstance()->get(QuoteManagement::class);
+            $eventManager = ObjectManager::getInstance()->get(\Magento\Framework\Event\ManagerInterface::class);
             // @codingStandardsIgnoreEnd
             $order = $orderFactory->create()->loadByIncrementId($incrementId);
-            $quote = $quoteFactory->create()->load($order->getQuoteId());
-            $this->_initCheckout($quote);
-            if(!$this->checkout->update($post)){
-                $result = ['error' => false];
-                /** @var \Magento\Framework\Controller\Result\Json $result */
-                $resultJson = $this->resultJsonFactory->create();
-                $resultJson->setData($result);
-                return $resultJson;
+            $quote = null;
+            if($order->getId()){
+                $quote = $quoteFactory->create()->load($order->getQuoteId());
+                $this->_initCheckout($quote);
+                $this->checkout->validatePayload($post);
+            } else {
+                // Create Order From Quote
+                $quote = $quoteFactory->create()->load($incrementId,'reserved_order_id');
+                $this->_initCheckout($quote);
+                $this->checkout->validatePayload($post);
+                if($post['result'] !== 'COMPLETED') {
+                    return;
+                }
+                if($quote->getId() && $quote->getIsActive() && !$quote->getOrigOrderId() && in_array($quote->getPayment()->getMethod(),['latitudepay','genoapay'])){
+                    $orderId = $quoteManagement->placeOrder($quote->getId());
+                    $quote = $quoteFactory->create()->load($quote->getId());
+                }
             }
-            $result = ['success' => true];
+            if(!is_null($quote)){
+                if(!$this->checkout->update($post)){
+                    $result = ['error' => false];
+                    /** @var \Magento\Framework\Controller\Result\Json $result */
+                    $resultJson = $this->resultJsonFactory->create();
+                    $resultJson->setData($result);
+                    return $resultJson;
+                }
+                $result = ['success' => true];
+            } else {
+                throw new InvalidRequestException("Can't Find Quote. Invalid Order Id");
+            }
         } catch (RemoteServiceUnavailableException $e) {
             $this->logger->error($e->getMessage(),["errors" => __('Unable to get callback message')]);
             $this->getResponse()->setStatusHeader(503, '1.1', 'Service Unavailable')->sendResponse();

@@ -321,6 +321,7 @@ class Checkout
 
     public function start($returnUrl, $cancelUrl, $button = null)
     {
+        $this->quote->setCheckoutMethod($this->getCheckoutMethod());
         $this->quote->collectTotals();
 
         if (!$this->quote->getGrandTotal()) {
@@ -440,6 +441,7 @@ class Checkout
         $this->_getApi()
             ->setToken($token);
         $quote = $this->quote;
+        $quote->collectTotals();
         $method = $quote->getPayment()->getMethod();
         $this->ignoreAddressValidation();
         // check if we came from the Express Checkout button
@@ -561,11 +563,11 @@ class Checkout
      */
     public function update($payload)
     {
+        $this->_getApi()->validateSignature($payload);
+        $this->_getApi()->validateRemoteAddressCallback();
         $token = $payload['token'];
         $signature = $payload['signature'];
         $incrementId = $payload['reference'];
-        $this->_getApi()->validateSignature($payload);
-        $this->_getApi()->validateRemoteAddressCallback();
         $order = $this->orderData->loadByIncrementId($incrementId);
 
         if (!$order && $order->getId()) {
