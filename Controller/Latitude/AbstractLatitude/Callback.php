@@ -43,7 +43,6 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
      */
     public function execute()
     {
-        $emulation = ObjectManager::getInstance()->get(Emulation::class);
         $this->logger->info('Callback received');
         $this->logger->info('Raw (RESPONSE): ', $_SERVER);
         $result = [];
@@ -58,6 +57,7 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
             $orderFactory = ObjectManager::getInstance()->get(OrderFactory::class);
             $quoteFactory = ObjectManager::getInstance()->get(QuoteFactory::class);
             $quoteManagement = ObjectManager::getInstance()->get(QuoteManagement::class);
+            $cartRepository = ObjectManager::getInstance()->get(\Magento\Quote\Api\CartRepositoryInterface::class);
             $eventManager = ObjectManager::getInstance()->get(\Magento\Framework\Event\ManagerInterface::class);
             // @codingStandardsIgnoreEnd
             $order = $orderFactory->create()->loadByIncrementId($incrementId);
@@ -75,13 +75,16 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
                 // Create Order From Quote
                 $quote = $quoteFactory->create()->load($incrementId,'reserved_order_id');
                 $this->_initCheckout($quote);
-                $emulation->startEnvironmentEmulation($quote->getStoreId(), 'frontend');
                 $this->checkout->validatePayload($post);
                 if($post['result'] !== 'COMPLETED') {
                     return;
                 }
                 if($quote->getId() && $quote->getIsActive() && !$quote->getOrigOrderId() && in_array($quote->getPayment()->getMethod(),['latitudepay','genoapay'])){
-                    $orderId = $quoteManagement->placeOrder($quote->getId());
+                    $quote = $cartRepository->get($quote->getId());
+                    // Collect Totals & Save Quote
+                    $quote->collectTotals()->save();
+                    // Create Order From Quote
+                    $order = $quoteManagement->submit($quote);
                     $quote = $quoteFactory->create()->load($quote->getId());
                 }
             }
@@ -107,8 +110,6 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
             $this->logger->error($e->getMessage(), array("errors" => __('Unable to get callback message')));
             $result = ['error' => false,'message' => $e->getMessage()];
         }
-
-        $emulation->stopEnvironmentEmulation();
 
         /** @var \Magento\Framework\Controller\Result\Json $result */
         $resultJson = $this->resultJsonFactory->create();
