@@ -374,10 +374,18 @@ class Lpay extends AbstractApi
     public function validateSignature($payload)
     {
         $payloadValidate = $payload;
+        $methodCode = null;
+        if(isset($payloadValidate['method'])){
+            $methodCode = strtolower($payloadValidate['method']);
+            unset($payloadValidate['method']);
+        }
+        if(isset($payloadValidate['hash'])){
+            unset($payloadValidate['hash']);
+        }
         unset($payloadValidate['signature']);
         $salesStringStripped              = $this->curlHelper->stripJsonFromSalesString(json_encode($payloadValidate, JSON_UNESCAPED_SLASHES));
         $salesStringStrippedBase64encoded = $this->curlHelper->base64EncodeSalesString(trim($salesStringStripped));
-        $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded));
+        $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded),null,$methodCode);
         if($payload['signature'] !== $signatureHash) {
             throw new CouldNotSaveException(__('Invalid Signature'));
         }

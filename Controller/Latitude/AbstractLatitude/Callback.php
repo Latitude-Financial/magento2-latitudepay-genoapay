@@ -51,8 +51,6 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
             // Log payload callback
             $post = $this->getRequest()->getParams();
             $hash = $post['hash'];
-            unset($post['method']);
-            unset($post['hash']);
             $this->logger->info('Order Status (RESPONSE): ', $post);
             $this->_initToken(false);
             $incrementId = $post['reference'];
