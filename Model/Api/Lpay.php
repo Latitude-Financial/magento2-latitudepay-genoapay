@@ -337,6 +337,22 @@ class Lpay extends AbstractApi
     }
 
     /**
+     * Validate Order Total Amount
+     *
+     * @return bool
+     */
+    public function validateOrderTotalAmount($order,$hash)
+    {
+        $totalAmount = $this->formatPrice($order->getGrandTotal());
+        $currency = $order->getQuoteCurrencyCode();
+        $requestHash = sha1(implode('||',[$totalAmount,$currency]));
+        if($requestHash !== $hash) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * 
      * Validate Session
      *

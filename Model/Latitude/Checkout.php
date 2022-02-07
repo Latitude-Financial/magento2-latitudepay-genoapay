@@ -556,7 +556,7 @@ class Checkout
      * @param string $token
      * @return void
      */
-    public function update($payload)
+    public function update($payload,$hash)
     {
         $this->_getApi()->validateSignature($payload);
         $this->_getApi()->validateRemoteAddressCallback();
@@ -572,13 +572,20 @@ class Checkout
         try {
             switch($payload["result"]) {
                 case "COMPLETED":
-                    $payment = $order->getPayment();
-                    $payment->setTransactionId($token)
-                        ->setCurrencyCode($order->getBaseCurrencyCode())
-                        ->setParentTransactionId($payment->getTransactionId())
-                        ->setShouldCloseParentTransaction(true)
-                        ->setIsTransactionClosed(0)
-                        ->registerCaptureNotification($order->getBaseGrandTotal());
+                    if($this->_getApi()->validateOrderTotalAmount($order,$hash)) {
+                        $payment = $order->getPayment();
+                        $payment->setTransactionId($token)
+                            ->setCurrencyCode($order->getBaseCurrencyCode())
+                            ->setParentTransactionId($payment->getTransactionId())
+                            ->setShouldCloseParentTransaction(true)
+                            ->setIsTransactionClosed(0)
+                            ->registerCaptureNotification($order->getBaseGrandTotal());    
+                    } else {
+                        $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
+                        $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+                        $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Amount paid and Total cart amount Mismatch. Please investigate before shipping.</strong>');
+                        $this->messageManager->addWarningMessage('Your cart was updated resulting in a price mismatch. We have marked your order as Pending for a review.');
+                    }
                     try {
                         if (!$order->getEmailSent()) {
                             $this->orderSender->send($order);
