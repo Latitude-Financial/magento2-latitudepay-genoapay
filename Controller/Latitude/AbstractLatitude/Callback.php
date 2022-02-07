@@ -15,6 +15,7 @@ use Magento\Framework\Exception\RemoteServiceUnavailableException;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\QuoteManagement;
+use Magento\Store\Model\App\Emulation;
 
 class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude implements CsrfAwareActionInterface
 {
@@ -42,6 +43,7 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
      */
     public function execute()
     {
+        $emulation = ObjectManager::getInstance()->get(Emulation::class);
         $this->logger->info('Callback received');
         $this->logger->info('Raw (RESPONSE): ', $_SERVER);
         $result = [];
@@ -75,6 +77,7 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
                 // Create Order From Quote
                 $quote = $quoteFactory->create()->load($incrementId,'reserved_order_id');
                 $this->_initCheckout($quote);
+                $emulation->startEnvironmentEmulation($quote->getStoreId(), 'frontend');
                 $this->checkout->validatePayload($post);
                 if($post['result'] !== 'COMPLETED') {
                     return;
@@ -106,6 +109,8 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
             $this->logger->error($e->getMessage(), array("errors" => __('Unable to get callback message')));
             $result = ['error' => false,'message' => $e->getMessage()];
         }
+
+        $emulation->stopEnvironmentEmulation();
 
         /** @var \Magento\Framework\Controller\Result\Json $result */
         $resultJson = $this->resultJsonFactory->create();

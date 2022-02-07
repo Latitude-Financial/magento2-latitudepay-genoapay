@@ -391,7 +391,6 @@ class Lpay extends AbstractApi
      */
     public function validateRemoteAddressCallback()
     {
-        return true;
         $whitelistIps = ['3.106.103.14','54.206.155.248','13.239.100.234','13.54.247.192'];
         return in_array($this->getUserIpAddr(),$whitelistIps);
     }
