@@ -511,18 +511,13 @@ class Checkout
         }
         
         if($this->_getApi()->validateTotalAmount($token,$signature)) {
-            $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
-            $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-            $order->addStatusToHistory($order->getStatus(), '<strong style="color:green;">Payment success.</strong>'.'<br/>Token:'.$token);
-            /*
             $payment = $order->getPayment();
             $payment->setTransactionId($token)
                 ->setCurrencyCode($order->getBaseCurrencyCode())
                 ->setParentTransactionId($payment->getTransactionId())
                 ->setShouldCloseParentTransaction(true)
                 ->setIsTransactionClosed(0)
-                ->registerCaptureNotification($order->getBaseGrandTotal());
-            */    
+                ->registerCaptureNotification($order->getBaseGrandTotal());    
         } else {
             $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
             $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
