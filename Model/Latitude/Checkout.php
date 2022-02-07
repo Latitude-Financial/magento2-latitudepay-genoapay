@@ -579,6 +579,13 @@ class Checkout
                         ->setShouldCloseParentTransaction(true)
                         ->setIsTransactionClosed(0)
                         ->registerCaptureNotification($order->getBaseGrandTotal());
+                    try {
+                        if (!$order->getEmailSent()) {
+                            $this->orderSender->send($order);
+                        }
+                    } catch (\Exception $e) {
+                        $this->logger->critical($e);
+                    }
                     break;
                 case "FAILED":
                 case "CANCELED": 
