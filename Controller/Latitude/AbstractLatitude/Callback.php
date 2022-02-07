@@ -64,6 +64,11 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
                 $quote = $quoteFactory->create()->load($order->getQuoteId());
                 $this->_initCheckout($quote);
                 $this->checkout->validatePayload($post);
+                $result = ['success' => true];
+                /** @var \Magento\Framework\Controller\Result\Json $result */
+                $resultJson = $this->resultJsonFactory->create();
+                $resultJson->setData($result);
+                return $resultJson;
             } else {
                 // Create Order From Quote
                 $quote = $quoteFactory->create()->load($incrementId,'reserved_order_id');
