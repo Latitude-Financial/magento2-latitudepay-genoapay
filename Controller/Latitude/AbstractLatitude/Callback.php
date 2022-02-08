@@ -81,11 +81,9 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
                 }
                 if($quote->getId() && $quote->getIsActive() && !$quote->getOrigOrderId() && in_array($quote->getPayment()->getMethod(),['latitudepay','genoapay'])){
                     $quote = $cartRepository->get($quote->getId());
-                    // Collect Totals & Save Quote
-                    $quote->collectTotals()->save();
-                    // Create Order From Quote
-                    $order = $quoteManagement->submit($quote);
-                    $quote = $quoteFactory->create()->load($quote->getId());
+                    $currency = $quote->getCurrency();
+                    $quote->setTotalsCollectedFlag(true);
+                    $order = $quoteManagement->placeOrder($quote->getId());
                 }
             }
             if(!is_null($quote)){
