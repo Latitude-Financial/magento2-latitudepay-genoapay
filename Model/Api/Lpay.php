@@ -195,9 +195,12 @@ class Lpay extends AbstractApi
         try {
             $payload = json_encode($request,JSON_UNESCAPED_SLASHES);
             $response                     =  $this->curlHelper->createEcommercePurchase($payload, $token, $signatureHash);
-            $this->saveSessionTotalAmount($request, $token, $signatureHash);
+            $res = json_decode($response, JSON_UNESCAPED_SLASHES);
+            if(isset($res['token'])) {
+                $this->saveSessionTotalAmount($request, $res['token'], $signatureHash);
+            }
         } catch (\Exception $e) {
-             $this->logger->critical($e->getMessage());
+            $this->logger->critical($e->getMessage());
         }
 
         $this->purchaseResponse =  $response;
@@ -313,7 +316,7 @@ class Lpay extends AbstractApi
     {
         $totalAmount = $payload['totalAmount']['amount'];
         $currency = $payload['totalAmount']['currency'];
-        $requestHash = sha1(implode('||',[$totalAmount,$currency]));
+        $requestHash = sha1(implode('||',[$token,$totalAmount,$currency]));
         $this->checkoutSession->setLatitudeTotalAmount($requestHash);
     }
 
@@ -327,7 +330,7 @@ class Lpay extends AbstractApi
         $this->checkoutSession->start();
         $totalAmount = $this->formatPrice($this->cart->getQuote()->getGrandTotal());
         $currency = $this->cart->getQuote()->getQuoteCurrencyCode();
-        $requestHash = sha1(implode('||',[$totalAmount,$currency]));
+        $requestHash = sha1(implode('||',[$token,$totalAmount,$currency]));
         if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()){
             $this->checkoutSession->unsLatitudeTotalAmount();
             return false;
