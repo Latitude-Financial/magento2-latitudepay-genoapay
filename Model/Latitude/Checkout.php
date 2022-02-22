@@ -510,7 +510,7 @@ class Checkout
             return;
         }
         
-        $totalAmount = $this->_getApi()->getTotalAmount();
+        $totalAmount = $this->_getApi()->getTotalAmount($order);
         if($this->_getApi()->validateTotalAmount($token,$signature)) {
             $payment = $order->getPayment();
             $payment->setTransactionId($token)
