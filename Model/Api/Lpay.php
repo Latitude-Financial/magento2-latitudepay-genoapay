@@ -331,12 +331,33 @@ class Lpay extends AbstractApi
         $totalAmount = $this->formatPrice($this->cart->getQuote()->getGrandTotal());
         $currency = $this->cart->getQuote()->getQuoteCurrencyCode();
         $requestHash = sha1(implode('||',[$token,$totalAmount,$currency]));
-        if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()){
+        if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()) {
             $this->checkoutSession->unsLatitudeTotalAmount();
             return false;
         }
         $this->checkoutSession->unsLatitudeTotalAmount();
         return true;
+    }
+
+    /**
+     * Get Total Amount call
+     *
+     * @return string
+     */
+    public function getTotalAmount()
+    {
+        $this->checkoutSession->start();
+        return $this->formatPrice($this->checkoutSession->getLatitudeTotalAmount());
+    }
+
+    /**
+     * Get Order Total Amount
+     *
+     * @return string
+     */
+    public function getOrderTotalAmount($order)
+    {
+        return $this->formatPrice($order->getGrandTotal());
     }
 
     /**

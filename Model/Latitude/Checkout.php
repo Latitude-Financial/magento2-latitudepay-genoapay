@@ -510,6 +510,7 @@ class Checkout
             return;
         }
         
+        $totalAmount = $this->_getApi()->getTotalAmount();
         if($this->_getApi()->validateTotalAmount($token,$signature)) {
             $payment = $order->getPayment();
             $payment->setTransactionId($token)
@@ -521,7 +522,7 @@ class Checkout
         } else {
             $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
             $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Amount paid and Total cart amount Mismatch. Please investigate before shipping.</strong>');
+            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: Amount paid and Total cart amount Mismatch. Please investigate before shipping.</strong><br/><strong style="color:red;">Captured amount: '.$totalAmount.', TranscationId: '.$token.'.</strong>');
             $this->messageManager->addWarningMessage('Your cart was updated resulting in a price mismatch. We have marked your order as Pending for a review.');
         }
         
@@ -581,9 +582,10 @@ class Checkout
                             ->setIsTransactionClosed(0)
                             ->registerCaptureNotification($order->getBaseGrandTotal());    
                     } else {
+                        $totalAmount = $this->_getApi()->getOrderTotalAmount($order);
                         $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
                         $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-                        $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Amount paid and Total cart amount Mismatch. Please investigate before shipping.</strong>');
+                        $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: Amount paid and Total cart amount Mismatch. Please investigate before shipping.</strong><br/><strong style="color:red;">Captured amount: '.$totalAmount.', TranscationId: '.$token.'.</strong>');
                         $this->messageManager->addWarningMessage('Your cart was updated resulting in a price mismatch. We have marked your order as Pending for a review.');
                     }
                     try {
