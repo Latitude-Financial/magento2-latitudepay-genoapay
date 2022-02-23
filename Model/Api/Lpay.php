@@ -318,7 +318,12 @@ class Lpay extends AbstractApi
         $currency = $payload['totalAmount']['currency'];
         $requestHash = sha1(implode('||',[$token,$totalAmount,$currency]));
         $this->checkoutSession->setLatitudeTotalAmount($requestHash);
-        $this->checkoutSession->setTotalAmount($totalAmount);
+        $totals = [];
+        if($this->checkoutSession->getTotalAmounts() && is_array($this->checkoutSession->getTotalAmounts())){
+            $totals = $this->checkoutSession->getTotalAmounts();
+        }
+        $totals[$token] = $totalAmount;
+        $this->checkoutSession->setTotalAmounts($totals);
     }
 
     /**
@@ -333,11 +338,9 @@ class Lpay extends AbstractApi
         $currency = $this->cart->getQuote()->getQuoteCurrencyCode();
         $requestHash = sha1(implode('||',[$token,$totalAmount,$currency]));
         if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()) {
-            $this->checkoutSession->unsTotalAmount();
             $this->checkoutSession->unsLatitudeTotalAmount();
             return false;
         }
-        $this->checkoutSession->unsTotalAmount();
         $this->checkoutSession->unsLatitudeTotalAmount();
         return true;
     }
@@ -347,10 +350,14 @@ class Lpay extends AbstractApi
      *
      * @return string
      */
-    public function getTotalAmount($order)
+    public function getTotalAmount($order, $token)
     {
         $this->checkoutSession->start();
-        return $order->formatPrice($this->checkoutSession->getTotalAmount());
+        $totals = $this->checkoutSession->getTotalAmounts();
+        if(isset($totals[$token])) {
+            return $order->formatPrice($totals[$token]);
+        }
+        return '';
     }
 
     /**
@@ -408,6 +415,9 @@ class Lpay extends AbstractApi
         }
         if(isset($payloadValidate['hash'])){
             unset($payloadValidate['hash']);
+        }
+        if(isset($payloadValidate['totalPaidAmount'])) {
+            unset($payloadValidate['totalPaidAmount']);
         }
         unset($payloadValidate['signature']);
         $salesStringStripped              = $this->curlHelper->stripJsonFromSalesString(json_encode($payloadValidate, JSON_UNESCAPED_SLASHES));
