@@ -50,6 +50,7 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
             // Log payload callback
             $post = $this->getRequest()->getParams();
             $hash = $post['hash'];
+            $totalPaidAmount = $post['totalPaidAmount'];
             $this->logger->info('Order Status (RESPONSE): ', $post);
             $this->_initToken(false);
             $incrementId = $post['reference'];
@@ -87,7 +88,7 @@ class Callback extends \Latitude\Payment\Controller\Latitude\AbstractLatitude im
                 }
             }
             if(!is_null($quote)){
-                if(!$this->checkout->update($post,$hash)) {
+                if(!$this->checkout->update($post,$hash,$totalPaidAmount)) {
                     $result = ['error' => false];
                     /** @var \Magento\Framework\Controller\Result\Json $result */
                     $resultJson = $this->resultJsonFactory->create();

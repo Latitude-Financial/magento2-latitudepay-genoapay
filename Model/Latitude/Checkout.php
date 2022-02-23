@@ -555,17 +555,18 @@ class Checkout
     /**
      * Update the order when callback returned from Latitude until this moment all order data must be valid.
      *
-     * @param string $token
+     * @param array $payload
+     * @param string $hash
+     * @param string $totalPaidAmount
      * @return void
      */
-    public function update($payload,$hash)
+    public function update($payload,$hash,$totalPaidAmount)
     {
         $this->_getApi()->validateSignature($payload);
         $this->_getApi()->validateRemoteAddressCallback();
         $token = $payload['token'];
         $signature = $payload['signature'];
         $incrementId = $payload['reference'];
-        $totalPaidAmount = $payload['totalPaidAmount'];
         $order = $this->orderData->loadByIncrementId($incrementId);
 
         if (!$order && $order->getId()) {

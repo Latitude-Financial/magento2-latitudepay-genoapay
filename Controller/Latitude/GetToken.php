@@ -126,7 +126,7 @@ class GetToken extends AbstractLatitude
 
         $requestHash = sha1(implode('||',[$totalAmount,$currency]));
 
-        $callbackUrl =($this->configHelper->getConfigData('callback_url') ? $this->_url->getUrl($this->configHelper->getConfigData('callback_url'),['_query'=>['hash'=>$requestHash,'method' => ucfirst(strtolower($this->configHelper->getMethodCode()))]]) : $this->_url->getUrl('latitude/latitude/callback',['_query'=>['hash'=>$requestHash,'totalPaidAmount' => $totalAmount,'method' => ucfirst(strtolower($this->configHelper->getMethodCode()))]]));
+        $callbackUrl =($this->configHelper->getConfigData('callback_url') ? $this->_url->getUrl($this->configHelper->getConfigData('callback_url'),['_query'=>['hash'=>$requestHash,'totalPaidAmount' => $totalAmount,'method' => ucfirst(strtolower($this->configHelper->getMethodCode()))]]) : $this->_url->getUrl('latitude/latitude/callback',['_query'=>['hash'=>$requestHash,'totalPaidAmount' => $totalAmount,'method' => ucfirst(strtolower($this->configHelper->getMethodCode()))]]));
 
         // Latitude urls
         $this->checkout->prepareLatitudeUrls(
