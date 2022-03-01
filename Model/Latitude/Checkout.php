@@ -151,6 +151,11 @@ class Checkout
     protected $quoteManagement;
 
     /**
+     * @var \Magento\Sales\Api\Data\OrderInterface
+     */
+    protected $orderData;
+
+    /**
      * @var \Latitude\Payment\Model\Api\Type\Factory
      */
     protected $apiTypeFactory;
@@ -177,6 +182,11 @@ class Checkout
     protected $configHelper;
 
     /**
+     * @var \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress
+     */
+    protected $remoteAddress;
+
+    /**
      * @param \Latitude\Payment\Logger\Logger $logger
      * @param \Magento\Tax\Helper\Data $taxData
      * @param \Magento\Checkout\Helper\Data $checkoutData
@@ -191,12 +201,14 @@ class Checkout
      * @param \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository
      * @param OrderSender $orderSender
      * @param \Magento\Quote\Api\CartRepositoryInterface $quoteRepository
+     * @param \Magento\Sales\Api\Data\OrderInterface $orderData
      * @param \Magento\Quote\Model\Quote\TotalsCollector $totalsCollector
      * @param \Latitude\Payment\Model\Config $Config
      * @param \Magento\Framework\Session\Generic $latitudeSession
      * @param \Magento\Framework\Message\ManagerInterface $messageManager
      * @param \Latitude\Payment\Helper\Curl $curlHelper
      * @param \Latitude\Payment\Helper\Config $configHelper
+     * @param \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
      * @throws \Exception
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
@@ -215,12 +227,14 @@ class Checkout
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         OrderSender $orderSender,
         \Magento\Quote\Api\CartRepositoryInterface $quoteRepository,
+        \Magento\Sales\Api\Data\OrderInterface $orderData,
         \Magento\Quote\Model\Quote\TotalsCollector $totalsCollector,
         \Latitude\Payment\Model\Config $Config,
         \Magento\Framework\Session\Generic $latitudeSession,
         \Magento\Framework\Message\ManagerInterface $messageManager,
         \Latitude\Payment\Helper\Curl $curlHelper,
-        \Latitude\Payment\Helper\Config $configHelper
+        \Latitude\Payment\Helper\Config $configHelper,
+        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
     ) {
         $this->logger = $logger;
         $this->taxData = $taxData;
@@ -236,6 +250,7 @@ class Checkout
         $this->customerRepository = $customerRepository;
         $this->orderSender = $orderSender;
         $this->quoteRepository = $quoteRepository;
+        $this->orderData = $orderData;
         $this->totalsCollector = $totalsCollector;
         $this->config = $Config;
         $this->quote = $checkoutSession->getQuote();
@@ -243,6 +258,7 @@ class Checkout
         $this->messageManager = $messageManager;
         $this->curlHelper      = $curlHelper;
         $this->configHelper      = $configHelper;
+        $this->remoteAddress = $remoteAddress;
 
     }
 
@@ -305,6 +321,7 @@ class Checkout
 
     public function start($returnUrl, $cancelUrl, $button = null)
     {
+        $this->quote->setCheckoutMethod($this->getCheckoutMethod());
         $this->quote->collectTotals();
 
         if (!$this->quote->getGrandTotal()) {
@@ -424,6 +441,7 @@ class Checkout
         $this->_getApi()
             ->setToken($token);
         $quote = $this->quote;
+        $quote->collectTotals();
         $method = $quote->getPayment()->getMethod();
         $this->ignoreAddressValidation();
         // check if we came from the Express Checkout button
@@ -492,6 +510,8 @@ class Checkout
             return;
         }
         
+        $totalPaidAmount = $this->_getApi()->getTotalAmount($order,$token);
+        $totalAmount = $this->_getApi()->getOrderTotalAmount($order);
         if($this->_getApi()->validateTotalAmount($token,$signature)) {
             $payment = $order->getPayment();
             $payment->setTransactionId($token)
@@ -503,7 +523,7 @@ class Checkout
         } else {
             $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
             $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Amount paid and Total cart amount Mismatch. Please investigate before shipping.</strong>');
+            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: '.$totalPaidAmount.' paid, instead of '.$totalAmount.'. Please investigate before shipping.</strong><br/><strong style="color:red;">Transaction Id: '.$token.'.</strong>');
             $this->messageManager->addWarningMessage('Your cart was updated resulting in a price mismatch. We have marked your order as Pending for a review.');
         }
         
@@ -530,6 +550,70 @@ class Checkout
                 break;
         }
         $this->order = $order;
+    }
+
+    /**
+     * Update the order when callback returned from Latitude until this moment all order data must be valid.
+     *
+     * @param array $payload
+     * @param string $hash
+     * @param string $totalPaidAmount
+     * @return void
+     */
+    public function update($payload,$hash,$totalPaidAmount)
+    {
+        $this->_getApi()->validateSignature($payload);
+        $this->_getApi()->validateRemoteAddressCallback();
+        $token = $payload['token'];
+        $signature = $payload['signature'];
+        $incrementId = $payload['reference'];
+        $order = $this->orderData->loadByIncrementId($incrementId);
+
+        if (!$order && $order->getId()) {
+            return false;
+        }
+        
+        try {
+            switch($payload["result"]) {
+                case "COMPLETED":
+                    if($this->_getApi()->validateOrderTotalAmount($order,$hash)) {
+                        $payment = $order->getPayment();
+                        $payment->setTransactionId($token)
+                            ->setCurrencyCode($order->getBaseCurrencyCode())
+                            ->setParentTransactionId($payment->getTransactionId())
+                            ->setShouldCloseParentTransaction(true)
+                            ->setIsTransactionClosed(0)
+                            ->registerCaptureNotification($order->getBaseGrandTotal());    
+                    } else {
+                        $totalAmount = $this->_getApi()->getOrderTotalAmount($order);
+                        $totalPaidAmount = $order->formatPrice($totalPaidAmount);
+                        $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
+                        $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+                        $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: '.$totalPaidAmount.' paid, instead of '.$totalAmount.'. Please investigate before shipping.</strong><br/><strong style="color:red;">Transaction Id: '.$token.'.</strong>');
+                        $this->messageManager->addWarningMessage('Your cart was updated resulting in a price mismatch. We have marked your order as Pending for a review.');
+                    }
+                    try {
+                        if (!$order->getEmailSent()) {
+                            $this->orderSender->send($order);
+                        }
+                    } catch (\Exception $e) {
+                        $this->logger->critical($e);
+                    }
+                    break;
+                case "FAILED":
+                case "CANCELED": 
+                    $order->cancel();
+                    break;
+            }
+        } catch(\Exception $e) {
+            $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
+            $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Can not capture order online.</strong>'.$e->getMessage());
+        }
+
+        $order->save();
+        $this->order = $order;
+        return $this->order;
     }
 
     /**

@@ -18,6 +18,7 @@ use Magento\Framework\Exception\CouldNotSaveException;
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD)
  */
 class Lpay extends AbstractApi
 {
@@ -194,9 +195,12 @@ class Lpay extends AbstractApi
         try {
             $payload = json_encode($request,JSON_UNESCAPED_SLASHES);
             $response                     =  $this->curlHelper->createEcommercePurchase($payload, $token, $signatureHash);
-            $this->saveSessionTotalAmount($request, $token, $signatureHash);
+            $res = json_decode($response, JSON_UNESCAPED_SLASHES);
+            if(isset($res['token'])) {
+                $this->saveSessionTotalAmount($request, $res['token'], $signatureHash);
+            }
         } catch (\Exception $e) {
-             $this->logger->critical($e->getMessage());
+            $this->logger->critical($e->getMessage());
         }
 
         $this->purchaseResponse =  $response;
@@ -312,8 +316,14 @@ class Lpay extends AbstractApi
     {
         $totalAmount = $payload['totalAmount']['amount'];
         $currency = $payload['totalAmount']['currency'];
-        $requestHash = sha1(implode('||',[$totalAmount,$currency]));
+        $requestHash = sha1(implode('||',[$token,$totalAmount,$currency]));
         $this->checkoutSession->setLatitudeTotalAmount($requestHash);
+        $totals = [];
+        if($this->checkoutSession->getTotalAmounts() && is_array($this->checkoutSession->getTotalAmounts())){
+            $totals = $this->checkoutSession->getTotalAmounts();
+        }
+        $totals[$token] = $totalAmount;
+        $this->checkoutSession->setTotalAmounts($totals);
     }
 
     /**
@@ -326,12 +336,53 @@ class Lpay extends AbstractApi
         $this->checkoutSession->start();
         $totalAmount = $this->formatPrice($this->cart->getQuote()->getGrandTotal());
         $currency = $this->cart->getQuote()->getQuoteCurrencyCode();
-        $requestHash = sha1(implode('||',[$totalAmount,$currency]));
-        if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()){
+        $requestHash = sha1(implode('||',[$token,$totalAmount,$currency]));
+        if($requestHash !== $this->checkoutSession->getLatitudeTotalAmount()) {
             $this->checkoutSession->unsLatitudeTotalAmount();
             return false;
         }
         $this->checkoutSession->unsLatitudeTotalAmount();
+        return true;
+    }
+
+    /**
+     * Get Total Amount call
+     *
+     * @return string
+     */
+    public function getTotalAmount($order, $token)
+    {
+        $this->checkoutSession->start();
+        $totals = $this->checkoutSession->getTotalAmounts();
+        if(isset($totals[$token])) {
+            return $order->formatPrice($totals[$token]);
+        }
+        return '';
+    }
+
+    /**
+     * Get Order Total Amount
+     *
+     * @return string
+     */
+    public function getOrderTotalAmount($order)
+    {
+        return $order->formatPrice($order->getGrandTotal());
+    }
+
+    /**
+     * Validate Order Total Amount
+     *
+     * @return bool
+     */
+    public function validateOrderTotalAmount($order,$hash)
+    {
+        $totalAmount = $this->formatPrice($order->getGrandTotal());
+        $currency = $order->getOrderCurrencyCode();
+        $requestHash = sha1(implode('||',[$totalAmount,$currency]));
+        if($requestHash !== $hash) {
+            return false;
+        }
         return true;
     }
 
@@ -357,13 +408,57 @@ class Lpay extends AbstractApi
     public function validateSignature($payload)
     {
         $payloadValidate = $payload;
+        $methodCode = null;
+        if(isset($payloadValidate['method'])){
+            $methodCode = strtolower($payloadValidate['method']);
+            unset($payloadValidate['method']);
+        }
+        if(isset($payloadValidate['hash'])){
+            unset($payloadValidate['hash']);
+        }
+        if(isset($payloadValidate['totalPaidAmount'])) {
+            unset($payloadValidate['totalPaidAmount']);
+        }
         unset($payloadValidate['signature']);
         $salesStringStripped              = $this->curlHelper->stripJsonFromSalesString(json_encode($payloadValidate, JSON_UNESCAPED_SLASHES));
         $salesStringStrippedBase64encoded = $this->curlHelper->base64EncodeSalesString(trim($salesStringStripped));
-        $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded));
+        $signatureHash                    = $this->curlHelper->getSignatureHash(trim($salesStringStrippedBase64encoded),null,$methodCode);
         if($payload['signature'] !== $signatureHash) {
             throw new CouldNotSaveException(__('Invalid Signature'));
         }
         return true;
+    }
+
+    /**
+     * Validate Remote Ip Address Callback
+     *
+     * @return boolean
+     */
+    public function validateRemoteAddressCallback()
+    {
+        $whitelistIps = ['3.106.103.14','54.206.155.248','13.239.100.234','13.54.247.192'];
+        return in_array($this->getUserIpAddr(),$whitelistIps);
+    }
+
+    /**
+     * Get User IP
+     *
+     * @return string
+     * @SuppressWarnings(PHPMD.Superglobals)
+     */
+    protected function getUserIpAddr()
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) //if from shared
+        {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+        else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))   //if from a proxy
+        {
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+        else
+        {
+            return $_SERVER['REMOTE_ADDR'];
+        }
     }
 }

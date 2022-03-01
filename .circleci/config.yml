@@ -80,7 +80,8 @@ commands: # a reusable command with parameters
          name: "PHP CodeSniffer"
          command: |
             phpcs --config-set show_warnings 0
-            phpcs --standard=Magento2 --extensions=php --ignore=*/vendor/,*/Test/ --colors -s -p -v /var/www/html/app/code/Latitude/Payment
+            phpcs --config-set installed_paths /root/.composer/vendor/magento/magento-coding-standard,/root/.composer/vendor/phpcompatibility/php-compatibility
+            phpcs --standard=/var/www/html/app/code/Latitude/Payment/ruleset.xml --extensions=php --ignore=*/vendor/,*/Test/ --colors -s -p -v /var/www/html/app/code/Latitude/Payment
       # - run:
       #    name: "Run Backward Compatibility Check"
       #    command: |
@@ -118,6 +119,7 @@ commands: # a reusable command with parameters
       - run:
           name: "Generate Allure Report"
           command: |
+            mkdir -p dev/tests/acceptance/tests/_output/allure-report
             allure generate dev/tests/acceptance/tests/_output/ --clean -o dev/tests/acceptance/tests/_output/allure-report
       - store_test_results:
           path: /var/www/html/dev/tests/acceptance/tests/_output/allure-report
@@ -126,7 +128,7 @@ commands: # a reusable command with parameters
 jobs:
   deploy:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.4.2-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.3-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -180,7 +182,7 @@ jobs:
             bin/git_release.sh
   php74-m237:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.3.7-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.3.7-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -228,9 +230,9 @@ jobs:
       - lp-tests
       - m2-tests
       - artifacts
-  php73-m242:
+  php74-m242:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.4.2-php-7.3
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.2-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -281,9 +283,9 @@ jobs:
       - lp-tests
       - m2-tests
       - artifacts
-  php74-m242:
+  php74-m243:
     docker:
-      - image: registry.gitlab.com/magebinary/docker-opensource-ecommerce:magento-2.4.2-php-7.4
+      - image: registry.gitlab.com/latitude-financial/docker-opensource-ecommerce:magento-2.4.3-php-7.4
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASSWORD
@@ -329,7 +331,7 @@ jobs:
     working_directory: /var/www/html/app/code/Latitude/Payment
     steps:
       - setup:
-          version: "php74-m242"
+          version: "php74-m243"
       - cs-tests
       - lp-tests
       - m2-tests
@@ -338,20 +340,20 @@ workflows:
   version: 2
   main:
     jobs:
-      - php73-m242
+      - php74-m237
       - php74-m242:
           requires:
-              - php73-m242
+              - php74-m237
       - github-release:
           requires:
-            - php73-m242
+            - php74-m237
             - php74-m242
           filters:
             branches:
               only: master
       # - deploy:
       #     requires:
-      #       - php73-m242
+      #       - php74-m237
       #       - php74-m242
       #     filters:
       #       branches:

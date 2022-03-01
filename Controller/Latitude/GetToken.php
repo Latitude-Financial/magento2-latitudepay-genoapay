@@ -118,7 +118,15 @@ class GetToken extends AbstractLatitude
 
         $successUrl  =($this->configHelper->getConfigData('success_url') ?$this->_url->getUrl($this->configHelper->getConfigData('success_url')) : $this->_url->getUrl('latitude/latitude/placeorder'));
         $cancelUrl   =($this->configHelper->getConfigData('fail_url') ?$this->_url->getUrl($this->configHelper->getConfigData('fail_url')) : $this->_url->getUrl('latitude/latitude/cancel'));
-        $callbackUrl =($this->configHelper->getConfigData('callback_url') ? $this->_url->getUrl($this->configHelper->getConfigData('callback_url')) : $this->_url->getUrl('latitude/latitude/fail'));
+
+        $total = $this->checkoutSession->getQuote()->getGrandTotal();
+        $total = round($total, 2);
+        $totalAmount =  $total ? $this->_getApi()->formatPrice($total) :0.00;
+        $currency = $this->checkoutSession->getQuote()->getQuoteCurrencyCode();
+
+        $requestHash = sha1(implode('||',[$totalAmount,$currency]));
+
+        $callbackUrl =($this->configHelper->getConfigData('callback_url') ? $this->_url->getUrl($this->configHelper->getConfigData('callback_url'),['_query'=>['hash'=>$requestHash,'totalPaidAmount' => $totalAmount,'method' => ucfirst(strtolower($this->configHelper->getMethodCode()))]]) : $this->_url->getUrl('latitude/latitude/callback',['_query'=>['hash'=>$requestHash,'totalPaidAmount' => $totalAmount,'method' => ucfirst(strtolower($this->configHelper->getMethodCode()))]]));
 
         // Latitude urls
         $this->checkout->prepareLatitudeUrls(

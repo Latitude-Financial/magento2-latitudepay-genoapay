@@ -124,6 +124,12 @@ class StartTest extends LatitudeTestCase
         $this->latitudeCheckoutMock = $this->getMockBuilder(LatitudeCheckout::class)
             ->disableOriginalConstructor()
             ->getMock();
+        $apiMock = $this->basicMock(\Latitude\Payment\Model\Api\Lpay::class);
+
+        $apiMock->expects($this->any())
+            ->method('formatPrice')
+            ->willReturn(200);
+
         $this->latitudeCheckoutFactoryMock->expects($this->any())
             ->method('create')
             ->willReturn($this->latitudeCheckoutMock);
@@ -192,7 +198,8 @@ class StartTest extends LatitudeTestCase
                 'checkoutSession' => $this->checkoutSessionMock,
                 'messageManager'  => $this->messageManagerMock,
                 'checkoutFactory' => $this->latitudeCheckoutFactoryMock,
-                'resultJsonFactory' => $this->resultJsonFactoryMock
+                'resultJsonFactory' => $this->resultJsonFactoryMock,
+                'api'             => $apiMock
             ]
         );
     }

@@ -261,4 +261,14 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         /** @noinspection PhpUndefinedMethodInspection */
         return $this->getImageApiUrl().'/snippet.svg';
     }
+
+    /**
+     * Retrieve current payment method code
+     * @return string
+     */
+    public function getMethodCode()
+    {
+        /** @noinspection PhpUndefinedMethodInspection */
+        return $this->code;
+    }
 }
