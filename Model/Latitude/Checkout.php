@@ -523,7 +523,7 @@ class Checkout
         } else {
             $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
             $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: '.$totalPaidAmount.' paid, instead of '.$totalAmount.'. Please investigate before shipping.</strong><br/><strong style="color:red;">TranscationId: '.$token.'.</strong>');
+            $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: '.$totalPaidAmount.' paid, instead of '.$totalAmount.'. Please investigate before shipping.</strong><br/><strong style="color:red;">Transaction Id: '.$token.'.</strong>');
             $this->messageManager->addWarningMessage('Your cart was updated resulting in a price mismatch. We have marked your order as Pending for a review.');
         }
         
@@ -589,7 +589,7 @@ class Checkout
                         $totalPaidAmount = $order->formatPrice($totalPaidAmount);
                         $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT, true);
                         $order->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-                        $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: '.$totalPaidAmount.' paid, instead of '.$totalAmount.'. Please investigate before shipping.</strong><br/><strong style="color:red;">TranscationId: '.$token.'.</strong>');
+                        $order->addStatusToHistory($order->getStatus(), '<strong style="color:red;">Warning: '.$totalPaidAmount.' paid, instead of '.$totalAmount.'. Please investigate before shipping.</strong><br/><strong style="color:red;">Transaction Id: '.$token.'.</strong>');
                         $this->messageManager->addWarningMessage('Your cart was updated resulting in a price mismatch. We have marked your order as Pending for a review.');
                     }
                     try {
